@@ -1,0 +1,23 @@
+#!/bin/sh
+##############################################################################
+# Convert mp3 to Audiobooks (m4b)
+##############################################################################
+# Please edit the value to your liking...
+
+AUDIOBOOK_LOC="$(pwd)"
+
+##############################################################################
+# Be careful editing anything below this line
+##############################################################################
+SAVEIFS=$IFS
+IFS=$(echo -en "\n\b")
+sudo docker run \
+   -it \
+   --cpuset-cpus="1-2" \
+   --rm \
+   -v "$(pwd):/input:ro" \
+   -v "${AUDIOBOOK_LOC}:/output:rw" \
+   --entrypoint "m4b" \
+   ivonet/mediatools:latest \
+   "$@"
+IFS=$SAVEIFS
