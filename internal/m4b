@@ -215,7 +215,7 @@ fi
 if [ "$SAMPLERATE" = "16000" ]
 then
     # 16000 is not supported by the current ffmpeg aac codec
-    SAMPLERATE="24000" 
+    SAMPLERATE="24000"
 fi
 if [ "$SAMPLERATE" = "" ]
 then
@@ -258,7 +258,7 @@ case "$TARGET_DIR" in
 esac
 
 # create tmp dir if not exists
-if [ ! -d "$TEMP_DIR" ] 
+if [ ! -d "$TEMP_DIR" ]
 then
    mkdir "$TEMP_DIR"
 fi
@@ -319,10 +319,11 @@ RETVAL=$?
 [ $RETVAL -eq 0 ] || die "The ffmpeg command failed with exit code: $RETVAL"
 
 # AtomicParsley conversion to m4b
-echo AtomicParsley "$AUDIOBOOK.m4a" --title "$TITLE" --grouping "$GROUPING" --sortOrder album "$GROUPING" --album "$ALBUM" --artist "$AUTHOR" --genre "$GENRE" --tracknum "$TRACK" --disk "$TRACK" --comment "$COMMENT" --year "$YEAR" --stik Audiobook --overWrite
+set -x
 AtomicParsley "$AUDIOBOOK.m4a" --title "$TITLE" --grouping "$GROUPING" --sortOrder album "$GROUPING" --album "$ALBUM" --artist "$AUTHOR" --genre "$GENRE" --tracknum "$TRACK" --disk "$TRACK" --comment "$COMMENT" --year "$YEAR" --stik Audiobook --overWrite
 RETVAL=$?
 [ $RETVAL -eq 0 ] || die "The AtomicParsley command failed with exit code: $RETVAL"
+set +x
 
 # adding chapters to the audiobook
 mp4chaps -e "$CHAPTER_LENGTH" "$AUDIOBOOK.m4b"
@@ -334,6 +335,6 @@ mp4art --add "`find . -name '*.jpg' | head -n 1`" "$AUDIOBOOK.m4b"
 RETVAL=$?
 [ $RETVAL -eq 0 ] || die "The mp4art command failed with exit code: $RETVAL"
 
-#mp4box -splits 327680 
+#mp4box -splits 327680
 
 cp -v "$AUDIOBOOK.m4b" "$TARGET_DIR"
