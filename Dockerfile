@@ -32,8 +32,10 @@ RUN apt-get update \
         flac \
         id3v2 \
         lame \
+        mp3wrap \
         twolame \
         mp3check \
+        jq \
         mpv \
         sox \
         libpulse0 \

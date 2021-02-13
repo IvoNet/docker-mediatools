@@ -25,16 +25,12 @@ BITRATE_DEFAULT="64"
 SAMPLERATE_DEFAULT="44100"
 
 ####
-# Default chapter lengths in seconds
-CHAPTER_LENGTH="600"
-
-####
 # Default comment
 COMMENT="Conversion done by https://hub.docker.com/r/ivonet/mediatools (c) IvoNet.nl"
 
 ####
 # Default name temporary work directory
-TEMP_DIR="${HOME}/"
+TEMP_DIR="${HOME}"
 
 ####
 # Default target directory to store the end resultAudiobook
@@ -56,45 +52,48 @@ YEAR=""
 # Application section - DO NOT EDIT
 #######################################################################
 # Die function
-die () {
-    echo >&2 "[ERROR] The job ended in error."
-    echo "[ERROR] $@"
-    exit 1
+die() {
+  echo >&2 "[ERROR] The job ended in error."
+  echo "[ERROR] $@"
+  exit 1
 }
 
-check1=`which ffmpeg`
-if [ "$check1" = "" ]
-then
-    die "ffmpeg is missing -> e.g.: brew install ffmpeg"
+cover() {
+  if [ "$(ls -1 *.$1 2>/dev/null | wc -l)" != "0" ]; then
+    for f in *.$1; do
+      echo "File: $f -> $(echo $f | tr "[:upper:]" "[:lower:]")"
+      cp "$f" "${TEMP_DIR}/$(echo $f | tr "[:upper:]" "[:lower:]")"
+    done
+  fi
+}
+
+check1=$(which ffmpeg)
+if [ "$check1" = "" ]; then
+  die "ffmpeg is missing -> e.g.: brew install ffmpeg"
 fi
-check3=`which AtomicParsley`
-if [ "$check3" = "" ]
-then
-    die "AtomicParsley is missing -> e.g.: brew install atomicparsley"
+check3=$(which AtomicParsley)
+if [ "$check3" = "" ]; then
+  die "AtomicParsley is missing -> e.g.: brew install atomicparsley"
 fi
-check4=`which mp4chaps`
-if [ "$check4" = "" ]
-then
-    die "mp4chaps is missing -> e.g.: brew install mp4v2"
+check4=$(which mp4chaps)
+if [ "$check4" = "" ]; then
+  die "mp4chaps is missing -> e.g.: brew install mp4v2"
 fi
-check5=`which mp4art`
-if [ "$check5" = "" ]
-then
-    die "mp4art is missing -> e.g.: brew install mp4v2"
+check5=$(which mp4art)
+if [ "$check5" = "" ]; then
+  die "mp4art is missing -> e.g.: brew install mp4v2"
 fi
-check6=`which eyeD3`
-if [ "$check6" = "" ]
-then
-    die "eyeD3 is missing -> e.g.: brew install eyeD3"
+check6=$(which eyeD3)
+if [ "$check6" = "" ]; then
+  die "eyeD3 is missing -> e.g.: brew install eyeD3"
 fi
-check7=`which mp3info`
-if [ "$check7" = "" ]
-then
-    die "mp3info is missing -> e.g.: brew install mp3info"
+check7=$(which mp3info)
+if [ "$check7" = "" ]; then
+  die "mp3info is missing -> e.g.: brew install mp3info"
 fi
 
 USAGE=$(
-cat <<EOF
+  cat <<EOF
 m4b [OPTIONS ...]
 -h                This message
 -v                Show version
@@ -107,7 +106,7 @@ m4b [OPTIONS ...]
 -g VALUE          The Grouping name (mandatory).
 -G VALUE          Genre (optional).
 -c VALUE          The length of a chapter in seconds (optional).
-                  Default value = 180
+                  Default value is deduce from mp3's
 -C VALUE          Comment (optional)
 -b VALUE          The bitrate you want to encode with (optional).
                   Default value = 128
@@ -127,121 +126,110 @@ EOF
 
 # Parse command line options.
 while getopts hvo:a:t:b:s:c:g:w:G:C:y:d: OPT; do
-    case "$OPT" in
-        h)
-            echo "$USAGE"
-            exit 0
-            ;;
-        v)
-            echo "`basename $0` version 2.1"
-            exit 0
-            ;;
-        o)
-            AUDIOBOOK=$OPTARG
-            ;;
-        a)
-            AUTHOR=$OPTARG
-            ;;
-        c)
-            CHAPTER_LENGTH=$OPTARG
-            ;;
-        C)
-            COMMENT=$OPTARG
-            ;;
-        g)
-            GROUPING=$OPTARG
-            ;;
-        G)
-            GENRE=$OPTARG
-            ;;
-        t)
-            ALBUM=$OPTARG
-            ;;
-        b)
-            BITRATE=$OPTARG
-            ;;
-        s)
-            SAMPLERATE=$OPTARG
-            ;;
-        w)
-           TEMP_DIR=$OPTARG
-           ;;
-        y)
-           YEAR=$OPTARG
-           ;;
-        d)
-           TRACK=$OPTARG
-           ;;
-        \?)
-            # getopts issues an error message
-            die "You should...\n$USAGE"
-            ;;
-    esac
+  case "$OPT" in
+  h)
+    echo "$USAGE"
+    exit 0
+    ;;
+  v)
+    echo "$(basename $0) version 2.3"
+    exit 0
+    ;;
+  o)
+    AUDIOBOOK=$OPTARG
+    ;;
+  a)
+    AUTHOR=$OPTARG
+    ;;
+  c)
+    CHAPTER_LENGTH=$OPTARG
+    ;;
+  C)
+    COMMENT=$OPTARG
+    ;;
+  g)
+    GROUPING=$OPTARG
+    ;;
+  G)
+    GENRE=$OPTARG
+    ;;
+  t)
+    ALBUM=$OPTARG
+    ;;
+  b)
+    BITRATE=$OPTARG
+    ;;
+  s)
+    SAMPLERATE=$OPTARG
+    ;;
+  w)
+    TEMP_DIR=$OPTARG
+    ;;
+  y)
+    YEAR=$OPTARG
+    ;;
+  d)
+    TRACK=$OPTARG
+    ;;
+  \?)
+    # getopts issues an error message
+    die "You should...\n$USAGE"
+    ;;
+  esac
 done
 
-
 # Remove the options we parsed above.
-shift `expr $OPTIND - 1`
+shift $(expr $OPTIND - 1)
 
 #Non optionals
-if [ "$AUTHOR" = "" ]
-then
-    die "The -a option is mandatory.\n$USAGE"
+if [ "$AUTHOR" = "" ]; then
+  die "The -a option is mandatory.\n$USAGE"
 fi
-if [ "GROUPING" = "" ]
-then
-    die "The -g option is mandatory.\n$USAGE"
+if [ "GROUPING" = "" ]; then
+  die "The -g option is mandatory.\n$USAGE"
 fi
-if [ "ALBUM" = "" ]
-then
-    die "The -t option is mandatory.\n$USAGE"
+if [ "ALBUM" = "" ]; then
+  die "The -t option is mandatory.\n$USAGE"
 fi
 
 #Convention over configuration
-if [ "$AUDIOBOOK" = "" ]
-then
-	AUDIOBOOK="$AUTHOR - $GROUPING - $ALBUM"
-	AUDIOBOOK=${AUDIOBOOK//#/}
-	TITLE=$AUDIOBOOK
-	echo "Filename based on convention:\n$AUDIOBOOK"
+if [ "$AUDIOBOOK" = "" ]; then
+  AUDIOBOOK="$AUTHOR - $GROUPING - $ALBUM"
+  AUDIOBOOK=${AUDIOBOOK//#/}
+  TITLE=$AUDIOBOOK
+  echo "Filename based on convention:"
+  echo "$AUDIOBOOK"
 fi
 
-mp3fl="`find . -name '*.mp3' | head -n 1`"
+mp3fl="$(find *.mp3 | head -n 1)"
 
-if [ "$SAMPLERATE" = "" ]
-then
-    SAMPLERATE="`mp3info -p '%Q' \"$mp3fl\"`"
+if [ "$SAMPLERATE" = "" ]; then
+  SAMPLERATE="$(mp3info -p '%Q' "$mp3fl")"
 fi
-if [ "$SAMPLERATE" = "16000" ]
-then
-    # 16000 is not supported by the current ffmpeg aac codec
-    SAMPLERATE="24000"
+if [ "$SAMPLERATE" = "16000" ]; then
+  # 16000 is not supported by the current ffmpeg aac codec
+  SAMPLERATE="24000"
 fi
-if [ "$SAMPLERATE" = "" ]
-then
-    SAMPLERATE=$SAMPLERATE_DEFAULT
+if [ "$SAMPLERATE" = "" ]; then
+  SAMPLERATE=$SAMPLERATE_DEFAULT
 fi
 echo "SAMPLERATE=$SAMPLERATE"
 
-if [ "$BITRATE" = "" ]
-then
-    BITRATE="`mp3info -r m -p '%r' \"$mp3fl\"`"
+if [ "$BITRATE" = "" ]; then
+  BITRATE="$(mp3info -r m -p '%r' "$mp3fl")"
 fi
-if [ "$BITRATE" = "" ]
-then
-    BITRATE=$BITRATE_DEFAULT
+if [ "$BITRATE" = "" ]; then
+  BITRATE=$BITRATE_DEFAULT
 fi
-if [ "$BITRATE" = "320" ]
-then
-    BITRATE=$BITRATE_DEFAULT
+if [ "$BITRATE" = "320" ]; then
+  BITRATE=$BITRATE_DEFAULT
 fi
 echo "BITRATE=$BITRATE"
-if [ "$TRACK" = "" ]
-then
-    TRACK="1/1"
+if [ "$TRACK" = "" ]; then
+  TRACK="1/1"
 else
-    TRACKNAME=".Part ${TRACK//\/[0-9]/}"
-    AUDIOBOOK=$AUDIOBOOK$TRACKNAME
+  TRACKNAME=".Part ${TRACK//\/[0-9]/}"
+  AUDIOBOOK=$AUDIOBOOK$TRACKNAME
 fi
 echo "TRACK=$TRACK"
 
@@ -251,134 +239,111 @@ echo "TRACK=$TRACK"
 #    TEMP_DIR="$TEMP_DIR/"
 #    ;;
 #esac
-case "$TARGET_DIR" in
+case "${TARGET_DIR}" in
 *)
-    TARGET_DIR="$TARGET_DIR/"
-    ;;
+  {TARGET_DIR}="${TARGET_DIR}/"
+  ;;
 esac
 
 # create tmp dir if not exists
-if [ ! -d "$TEMP_DIR" ]
-then
-   mkdir "$TEMP_DIR"
+if [ ! -d "$TEMP_DIR" ]; then
+  mkdir "$TEMP_DIR"
 fi
 
 echo "AUTHOR=$AUTHOR"
-echo "CHAPTER_LENGTH=$CHAPTER_LENGTH"
+if [ -n "$CHAPTER_LENGTH" ]; then
+  echo "Using fixed length chapters..."
+  echo "CHAPTER_LENGTH=$CHAPTER_LENGTH"
+fi
 echo "GROUPING=$GROUPING"
 echo "ALBUM Title=$ALBUM"
 echo "WORK DIR=$TEMP_DIR"
 echo "Creating: $AUDIOBOOK"
 
-cd "${SOURCE_DIR}"
+cd "${SOURCE_DIR}" || exit
 
-if [ "$(ls -1 *.jpg 2>/dev/null|wc -l)" == "0" ]; then
-   eyeD3 --write-images="${TARGET_DIR}" "`find . -name '*.mp3' | head -n 1`"
-   RETVAL=$?
-   [ $RETVAL -eq 0 ] || echo "The eyeD3 command failed with exit code: $RETVAL"
+if [ "$(find *.jpg 2>/dev/null | wc -l)" == "0" ]; then
+  eyeD3 --write-images="${TARGET_DIR}" "$(find *.mp3 | head -n 1)"
+  RETVAL=$?
+  [ $RETVAL -eq 0 ] || echo "The eyeD3 command failed with exit code: $RETVAL"
 fi
 
-if [ "$(ls -1 *.jpg 2>/dev/null|wc -l)" != "0" ]
-then
-    for f in *.jpg; do
-      echo "File -> $f"
-      cp "$f" "${TEMP_DIR}/$f.tmp"
-      cd "${TEMP_DIR}"
-      mv "$f.tmp" "`echo $f | tr "[:upper:]" "[:lower:]"`"
-      cd - &>/dev/null
-    done
-fi
 
-if [ "$(ls -1 *.JPG 2>/dev/null|wc -l)" != "0" ]
-then
-    for f in *.JPG; do
-      echo "File -> $f"
-      cp "$f" "${TEMP_DIR}/$f.tmp"
-      cd "${TEMP_DIR}"
-      mv "$f.tmp" "`echo $f | tr "[:upper:]" "[:lower:]"`"
-      cd - &>/dev/null
-    done
-fi
+cover jpg
+cover JPG
+cover png
+cover PNG
+cover jpeg
+cover JPEG
 
-if [ "$(ls -1 *.jpeg 2>/dev/null|wc -l)" != "0" ]
-then
-    for f in *.jpeg; do
-      echo "File -> $f"
-      cp "$f" "${TEMP_DIR}/$f.tmp"
-      cd "${TEMP_DIR}"
-      mv "$f.tmp" "`echo $f | tr "[:upper:]" "[:lower:]"`"
-      cd - &>/dev/null
-    done
-fi
-
-if [ "$(ls -1 *.JPEG 2>/dev/null|wc -l)" != "0" ]
-then
-    for f in *.JPEG; do
-      echo "File -> $f"
-      cp "$f" "${TEMP_DIR}/$f.tmp"
-      cd "${TEMP_DIR}"
-      mv "$f.tmp" "`echo $f | tr "[:upper:]" "[:lower:]"`"
-      cd - &>/dev/null
-    done
-fi
-
-if [ "$(ls -1 *.png 2>/dev/null|wc -l)" != "0" ]
-then
-    for f in *.png; do
-      echo "File -> $f"
-      cp "$f" "${TEMP_DIR}/$f.tmp"
-      cd "${TEMP_DIR}"
-      mv "$f.tmp" "`echo $f | tr "[:upper:]" "[:lower:]"`"
-      cd - &>/dev/null
-    done
-fi
-
-if [ "$(ls -1 *.PNG 2>/dev/null|wc -l)" != "0" ]
-then
-    for f in *.PNG; do
-      echo "File -> $f"
-      cp "$f" "${TEMP_DIR}/$f.tmp"
-      cd "${TEMP_DIR}"
-      mv "$f.tmp" "`echo $f | tr "[:upper:]" "[:lower:]"`"
-      cd - &>/dev/null
-    done
-fi
-
-cd "${TEMP_DIR}"
+cd "${TEMP_DIR}" || exit
 mv "*.jpeg" "*.jpg" &>/dev/null
 mogrify -format jpg *.png &>/dev/null
 
-if [ "$(ls -1 *.jpg 2>/dev/null|wc -l)" == "0" ]; then
-   die "Could not find or extract a cover image"
+if [ "$(ls -1 *.jpg 2>/dev/null | wc -l)" == "0" ]; then
+  die "Could not find or extract a cover image"
 fi
 
-cd "${SOURCE_DIR}"
+cd "${SOURCE_DIR}" || exit
 
-find *.mp3 -exec cat "{}" >>"$TEMP_DIR/$GROUPED_MP3_NAME" \;
+echo "Assembling chapter information..."
+echo "00:00:00.000 Chapter 1" >"$TEMP_DIR/$AUDIOBOOK.chapters.txt"
+if [ -z "$CHAPTER_LENGTH" ]; then
+  if [ $(ls -1 *.mp3 2>/dev/null | wc -l) -eq 0 ]; then
+    die "No mp3 files found in this folder"
+  fi
+  i=2
+  total_seconds=0
+  total_millis=0
+  for mp3 in *.mp3; do
+    duration=$(ffprobe -v quiet -print_format json -show_format "${mp3}" | jq ".format.duration"|sed 's/"//g')
+    millisecs="$(echo $duration | awk -F'.' '{print $2}')"
+    millisecs="${millisecs#"${millisecs%%[!0]*}"}"
+    total_millis=$((total_millis + millisecs))
+    secs=$((total_millis / 1000000))
+    total_millis=$((total_millis - (secs * 1000000)))
+    total_seconds=$((total_seconds + $(echo $duration | awk -F'.' '{print $1}') + secs))
+    hour=$((total_seconds / (60 * 60)))
+    minutes=$(((total_seconds - (hour * 60 * 60)) / 60))
+    seconds=$((total_seconds - (hour * 60 * 60) - (minutes * 60)))
+    hour=$(printf "%02d" $hour)
+    minutes=$(printf "%02d" $minutes)
+    seconds=$(printf "%02d" $seconds)
+    echo "$hour:$minutes:$seconds.${millisecs:0:3} Chapter $i" >>"$TEMP_DIR/$AUDIOBOOK.chapters.txt"
+    echo "$hour:$minutes:$seconds.${millisecs:0:3} Chapter $i"
+    i=$((i + 1))
+  done
+  cp "$TEMP_DIR/$AUDIOBOOK.chapters.txt" "${TARGET_DIR}"
+fi
 
-cd "${TEMP_DIR}"
+echo "Assembling the audiofiles..."
+ffmpeg -i "concat:$(find *.mp3 | tr '\n' '|' | sed 's/|$//g')" -v quiet -acodec copy "$TEMP_DIR/$GROUPED_MP3_NAME"
+
+cd "${TEMP_DIR}" || exit
 
 ffmpeg -i "$GROUPED_MP3_NAME" -threads 4 -vn -y -acodec aac -strict -2 -map_metadata 0 -map_metadata:s:a 0:s:a -ab "$BITRATE"k -ar "$SAMPLERATE" -ac 1 "$AUDIOBOOK.m4a"
 RETVAL=$?
 [ $RETVAL -eq 0 ] || die "The ffmpeg command failed with exit code: $RETVAL"
 
 # AtomicParsley conversion to m4b
-set -x
 AtomicParsley "$AUDIOBOOK.m4a" --title "$TITLE" --grouping "$GROUPING" --sortOrder album "$GROUPING" --album "$ALBUM" --artist "$AUTHOR" --genre "$GENRE" --tracknum "$TRACK" --disk "$TRACK" --comment "$COMMENT" --year "$YEAR" --stik Audiobook --overWrite
 RETVAL=$?
 [ $RETVAL -eq 0 ] || die "The AtomicParsley command failed with exit code: $RETVAL"
-set +x
 
 # adding chapters to the audiobook
-mp4chaps -e "$CHAPTER_LENGTH" "$AUDIOBOOK.m4b"
+if [ -f "$TEMP_DIR/${AUDIOBOOK}.chapters.txt" ]; then
+  mp4chaps -i "$AUDIOBOOK.m4b"
+else
+  mp4chaps -e "$CHAPTER_LENGTH" "$AUDIOBOOK.m4b"
+fi
 RETVAL=$?
 [ $RETVAL -eq 0 ] || die "The mp4chaps command failed with exit code: $RETVAL"
 
 # adding cover art to audiobook
-mp4art --add "`find . -name '*.jpg' | head -n 1`" "$AUDIOBOOK.m4b"
+mp4art --add "$(find . -name '*.jpg' | head -n 1)" "$AUDIOBOOK.m4b"
 RETVAL=$?
 [ $RETVAL -eq 0 ] || die "The mp4art command failed with exit code: $RETVAL"
 
 #mp4box -splits 327680
 
-cp -v "$AUDIOBOOK.m4b" "$TARGET_DIR"
+cp -v "${AUDIOBOOK}.m4b" "${TARGET_DIR}"
