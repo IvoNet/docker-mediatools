@@ -289,9 +289,53 @@ then
     done
 fi
 
+if [ "$(ls -1 *.JPG 2>/dev/null|wc -l)" != "0" ]
+then
+    for f in *.JPG; do
+      echo "File -> $f"
+      cp "$f" "${TEMP_DIR}/$f.tmp"
+      cd "${TEMP_DIR}"
+      mv "$f.tmp" "`echo $f | tr "[:upper:]" "[:lower:]"`"
+      cd - &>/dev/null
+    done
+fi
+
+if [ "$(ls -1 *.jpeg 2>/dev/null|wc -l)" != "0" ]
+then
+    for f in *.jpeg; do
+      echo "File -> $f"
+      cp "$f" "${TEMP_DIR}/$f.tmp"
+      cd "${TEMP_DIR}"
+      mv "$f.tmp" "`echo $f | tr "[:upper:]" "[:lower:]"`"
+      cd - &>/dev/null
+    done
+fi
+
+if [ "$(ls -1 *.JPEG 2>/dev/null|wc -l)" != "0" ]
+then
+    for f in *.JPEG; do
+      echo "File -> $f"
+      cp "$f" "${TEMP_DIR}/$f.tmp"
+      cd "${TEMP_DIR}"
+      mv "$f.tmp" "`echo $f | tr "[:upper:]" "[:lower:]"`"
+      cd - &>/dev/null
+    done
+fi
+
 if [ "$(ls -1 *.png 2>/dev/null|wc -l)" != "0" ]
 then
     for f in *.png; do
+      echo "File -> $f"
+      cp "$f" "${TEMP_DIR}/$f.tmp"
+      cd "${TEMP_DIR}"
+      mv "$f.tmp" "`echo $f | tr "[:upper:]" "[:lower:]"`"
+      cd - &>/dev/null
+    done
+fi
+
+if [ "$(ls -1 *.PNG 2>/dev/null|wc -l)" != "0" ]
+then
+    for f in *.PNG; do
       echo "File -> $f"
       cp "$f" "${TEMP_DIR}/$f.tmp"
       cd "${TEMP_DIR}"
