@@ -35,6 +35,7 @@ RUN apt-get update \
         twolame \
         mp3check \
         mpv \
+        sox \
         libpulse0 \
         libv4l-0 \
         pulseaudio \
@@ -47,15 +48,6 @@ WORKDIR /input
 
 COPY internal/* /usr/local/bin/
 RUN chmod +x /usr/local/bin
-# && echo "root:secret" | chpasswd \
-# && chmod 777 /input
-
-#RUN groupadd -r user \
-# && useradd -r -g user -G audio,video user \
-# && mkdir -p /home/user/Downloads \
-# && chown -R user:user /home/user
-#
-#USER user
 
 VOLUME '/input'
 VOLUME '/output'
