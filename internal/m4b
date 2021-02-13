@@ -118,6 +118,7 @@ m4b [OPTIONS ...]
                   Default value = ""
 Template:
 m4b -G "" -a "" -g "" -t ""
+m4b -G "" -a "" -g "" -t "" -c 600
 m4b -w ./tmp -a "" -g "" -G "" -t ""
 m4b -G "Urban Fantasy" -a "" -g "" -t ""
 m4b -w ./tmp -G "Urban Fantasy" -a "" -g "" -t ""
@@ -333,17 +334,16 @@ RETVAL=$?
 # adding chapters to the audiobook
 if [ -f "$TEMP_DIR/${AUDIOBOOK}.chapters.txt" ]; then
   mp4chaps -i "$AUDIOBOOK.m4b"
+  RETVAL=$?
 else
   mp4chaps -e "$CHAPTER_LENGTH" "$AUDIOBOOK.m4b"
+  RETVAL=$?
 fi
-RETVAL=$?
 [ $RETVAL -eq 0 ] || die "The mp4chaps command failed with exit code: $RETVAL"
 
 # adding cover art to audiobook
 mp4art --add "$(find . -name '*.jpg' | head -n 1)" "$AUDIOBOOK.m4b"
 RETVAL=$?
 [ $RETVAL -eq 0 ] || die "The mp4art command failed with exit code: $RETVAL"
-
-#mp4box -splits 327680
 
 cp -v "${AUDIOBOOK}.m4b" "${TARGET_DIR}"
