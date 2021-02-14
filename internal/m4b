@@ -78,7 +78,7 @@ m4b [OPTIONS ...]
 -a VALUE          The Author name (mandatory).
 -t VALUE          The Title of the book (mandatory).
 -d VALUE/VALUE    Tracknum/total tracks - e.g. 1/2 - (optional).
--g VALUE          The Grouping name (mandatory).
+-g VALUE          The Grouping name.
 -G VALUE          Genre (optional).
 -c VALUE          The length of a chapter in seconds (optional).
                   Default value is deduce from mp3's
@@ -161,16 +161,17 @@ shift $(expr ${OPTIND} - 1)
 if [ -z "${AUTHOR}" ]; then
   die "The -a option is mandatory.\n${USAGE}"
 fi
-if [ -z "${GROUPING}" ]; then
-  die "The -g option is mandatory.\n${USAGE}"
-fi
 if [ -z "${ALBUM}" ]; then
   die "The -t option is mandatory.\n${USAGE}"
 fi
 
 #Convention over configuration
 if [ -z "${AUDIOBOOK}" ]; then
-  AUDIOBOOK="${AUTHOR} - ${GROUPING} - ${ALBUM}"
+  if [ -z "${GROUPING}" ]; then
+    AUDIOBOOK="${AUTHOR} - ${ALBUM}"
+  else
+    AUDIOBOOK="${AUTHOR} - ${GROUPING} - ${ALBUM}"
+  fi
   AUDIOBOOK=${AUDIOBOOK//#/}
   TITLE=${AUDIOBOOK}
   echo "Filename based on convention:"
@@ -259,14 +260,15 @@ if [ -z "${CHAPTER_LENGTH}" ]; then
   fi
   echo "Assembling chapter information..."
   echo "00:00:00.000 Chapter 1" >"${TEMP_DIR}/${AUDIOBOOK}.chapters.txt"
-  i=2
+  echo "00:00:00.000 Chapter 1"
+  i=1
   total_secs=0
   for mp3 in *.mp3; do
     duration=$(ffprobe -v quiet -show_entries format=duration "${mp3}" | sed -n 's/duration=//p')
     total_secs=$(echo "$total_secs + $duration" | bc)
     CHAPTER_TIME="$(date -d "@$total_secs" -u +%H:%M:%S.%3N)"
-    printf "%s Chapter %d\n" ${CHAPTER_TIME} $((i++)) >>"${TEMP_DIR}/${AUDIOBOOK}.chapters.txt"
-    printf "%s Chapter %d\n" ${CHAPTER_TIME} $i
+    printf "%s Chapter %d\n" ${CHAPTER_TIME} $((++i)) >>"${TEMP_DIR}/${AUDIOBOOK}.chapters.txt"
+    printf "%s Chapter %d\n" "${CHAPTER_TIME}" "$i"
   done
   cp "${TEMP_DIR}/${AUDIOBOOK}.chapters.txt" "${TARGET_DIR}"
 fi
@@ -301,4 +303,4 @@ mp4art --add "$(find . -name '*.jpg' | head -n 1)" "${AUDIOBOOK}.m4b"
 RETVAL=$?
 [ ${RETVAL} -eq 0 ] || die "The mp4art command failed with exit code: ${RETVAL}"
 
-cp -v "${AUDIOBOOK}.m4b" "${TARGET_DIR}"
+cp -vf "${AUDIOBOOK}.m4b" "${TARGET_DIR}"
