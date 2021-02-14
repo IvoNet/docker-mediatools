@@ -158,18 +158,18 @@ done
 shift $(expr ${OPTIND} - 1)
 
 #Non optionals
-if [ "${AUTHOR}" = "" ]; then
+if [ -z "${AUTHOR}" ]; then
   die "The -a option is mandatory.\n${USAGE}"
 fi
-if [ "GROUPING" = "" ]; then
+if [ -z "${GROUPING}" ]; then
   die "The -g option is mandatory.\n${USAGE}"
 fi
-if [ "ALBUM" = "" ]; then
+if [ -z "${ALBUM}" ]; then
   die "The -t option is mandatory.\n${USAGE}"
 fi
 
 #Convention over configuration
-if [ "${AUDIOBOOK}" = "" ]; then
+if [ -z "${AUDIOBOOK}" ]; then
   AUDIOBOOK="${AUTHOR} - ${GROUPING} - ${ALBUM}"
   AUDIOBOOK=${AUDIOBOOK//#/}
   TITLE=${AUDIOBOOK}
@@ -194,7 +194,7 @@ echo "SAMPLERATE=${SAMPLERATE}"
 if [ -z "${BITRATE}" ]; then
   BITRATE="$(mp3info -r m -p '%r' "$mp3fl")"
 fi
-if [ "${BITRATE}" = "" ]; then
+if [ -z "${BITRATE}" ]; then
   BITRATE=${BITRATE_DEFAULT}
 fi
 if [ "${BITRATE}" = "320" ]; then
