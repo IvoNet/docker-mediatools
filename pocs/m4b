@@ -67,6 +67,31 @@ cover() {
   fi
 }
 
+check1=$(which ffmpeg)
+if [ "$check1" = "" ]; then
+  die "ffmpeg is missing -> e.g.: brew install ffmpeg"
+fi
+check3=$(which AtomicParsley)
+if [ "$check3" = "" ]; then
+  die "AtomicParsley is missing -> e.g.: brew install atomicparsley"
+fi
+check4=$(which mp4chaps)
+if [ "$check4" = "" ]; then
+  die "mp4chaps is missing -> e.g.: brew install mp4v2"
+fi
+check5=$(which mp4art)
+if [ "$check5" = "" ]; then
+  die "mp4art is missing -> e.g.: brew install mp4v2"
+fi
+check6=$(which eyeD3)
+if [ "$check6" = "" ]; then
+  die "eyeD3 is missing -> e.g.: brew install eyeD3"
+fi
+check7=$(which mp3info)
+if [ "$check7" = "" ]; then
+  die "mp3info is missing -> e.g.: brew install mp3info"
+fi
+
 USAGE=$(
   cat <<EOF
 m4b [OPTIONS ...]
