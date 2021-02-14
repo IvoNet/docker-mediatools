@@ -258,7 +258,7 @@ if [ -z "${CHAPTER_LENGTH}" ]; then
     die "No mp3 files found in this folder"
   fi
   echo "Assembling chapter information..."
-  echo "00:00:00.000 Chapter 1"
+  echo "00:00:00.000 Chapter 1" >"${TEMP_DIR}/${AUDIOBOOK}.chapters.txt"
   i=2
   total_secs=0
   for mp3 in *.mp3; do
