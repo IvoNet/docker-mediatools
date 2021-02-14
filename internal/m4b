@@ -54,7 +54,7 @@ YEAR=""
 # Die function
 die() {
   echo >&2 "[ERROR] The job ended in error."
-  echo "[ERROR] $@"
+  echo "[ERROR] $*"
   exit 1
 }
 
@@ -91,6 +91,7 @@ m4b [OPTIONS ...]
                   Default value = ${HOME}
 -y VALUE          Year
                   Default value = ""
+-z                Zero indexed chapter (default = 1 indexed)
 Template:
 m4b -G "" -a "" -g "" -t ""
 m4b -G "" -a "" -g "" -t "" -c 600
@@ -101,7 +102,7 @@ EOF
 )
 
 # Parse command line options.
-while getopts hvo:a:t:b:s:c:g:w:G:C:y:d: OPT; do
+while getopts hvzo:a:t:b:s:c:g:w:G:C:y:d: OPT; do
   case "${OPT}" in
   h)
     echo "${USAGE}"
@@ -110,6 +111,9 @@ while getopts hvo:a:t:b:s:c:g:w:G:C:y:d: OPT; do
   v)
     echo "$(basename $0) version 2.3"
     exit 0
+    ;;
+  z)
+    CHAPTER_IDX=0
     ;;
   o)
     AUDIOBOOK=${OPTARG}
@@ -209,6 +213,9 @@ else
   AUDIOBOOK=${AUDIOBOOK}${TRACKNAME}
 fi
 echo "TRACK=${TRACK}"
+if [ -z "${CHAPTER_IDX}" ]; then
+  CHAPTER_IDX=1
+fi
 
 case "${TARGET_DIR}" in
 *)
@@ -221,14 +228,14 @@ if [ ! -d "${TEMP_DIR}" ]; then
 fi
 
 echo "AUTHOR=${AUTHOR}"
-if [ -n "${CHAPTER_LENGTH}" ]; then
-  echo "Using fixed length chapters..."
-  echo "CHAPTER_LENGTH=${CHAPTER_LENGTH}"
-fi
 echo "GROUPING=${GROUPING}"
 echo "ALBUM Title=${ALBUM}"
 echo "WORK DIR=${TEMP_DIR}"
 echo "Creating: ${AUDIOBOOK}"
+if [ -n "${CHAPTER_LENGTH}" ]; then
+  echo "Using fixed length chapters..."
+  echo "CHAPTER_LENGTH=${CHAPTER_LENGTH}"
+fi
 
 cd "${SOURCE_DIR}" || exit
 
@@ -258,23 +265,42 @@ if [ -z "${CHAPTER_LENGTH}" ]; then
   if [ $(find *.mp3 2>/dev/null | wc -l) -eq 0 ]; then
     die "No mp3 files found in this folder"
   fi
-  echo "Assembling chapter information..."
-  echo "00:00:00.000 Chapter 1" >"${TEMP_DIR}/${AUDIOBOOK}.chapters.txt"
-  echo "00:00:00.000 Chapter 1"
-  i=1
-  total_secs=0
+  i=${CHAPTER_IDX}
+  total_seconds=0
+  total_millis=0
+  echo "00:00:00.000 Chapter $i" >"${TEMP_DIR}/${AUDIOBOOK}.chapters.txt"
+  echo "00:00:00.000 Chapter $i"
   for mp3 in *.mp3; do
-    duration=$(ffprobe -v quiet -show_entries format=duration "${mp3}" | sed -n 's/duration=//p')
-    total_secs=$(echo "$total_secs + $duration" | bc)
-    CHAPTER_TIME="$(date -d "@$total_secs" -u +%H:%M:%S.%3N)"
-    printf "%s Chapter %d\n" ${CHAPTER_TIME} $((++i)) >>"${TEMP_DIR}/${AUDIOBOOK}.chapters.txt"
-    printf "%s Chapter %d\n" "${CHAPTER_TIME}" "$i"
+    duration=$(ffprobe -v quiet -print_format json -show_format "${mp3}" | jq ".format.duration" | sed 's/"//g')
+    RETVAL=$?
+    [ ${RETVAL} -eq 0 ] || die "The ffprobe command failed with exit code: ${RETVAL}"
+
+    millis="$(echo ${duration} | awk -F'.' '{print $2}')"
+    millis="${millis#"${millis%%[!0]*}"}"
+
+    total_millis=$((total_millis + millis))
+    secs=$((total_millis / 1000000))
+    total_millis=$((total_millis - (secs * 1000000)))
+    total_seconds=$((total_seconds + $(echo ${duration} | awk -F'.' '{print $1}') + secs))
+
+    hours=$((total_seconds / (60 * 60)))
+    minutes=$(((total_seconds - (hours * 60 * 60)) / 60))
+    seconds=$((total_seconds - (hours * 60 * 60) - (minutes * 60)))
+
+    ((i++))
+    printf "%02d:%02d:%02d.%03d Chapter %d\n" "${hours}" "${minutes}" "${seconds}" "${millis:0:3}" $i >>"${TEMP_DIR}/${AUDIOBOOK}.chapters.txt"
+    printf "%02d:%02d:%02d.%03d Chapter %d\n" "${hours}" "${minutes}" "${seconds}" "${millis:0:3}" $i
   done
   cp "${TEMP_DIR}/${AUDIOBOOK}.chapters.txt" "${TARGET_DIR}"
 fi
 
 echo "Assembling the audiofiles..."
-ffmpeg -i "concat:$(find *.mp3 | tr '\n' '|' | sed 's/|$//g')" -v quiet -acodec copy "${TEMP_DIR}/${GROUPED_MP3_NAME}"
+dmp=$(ffmpeg -i "concat:$(find *.mp3 | tr '\n' '|' | sed 's/|$//g')" -v quiet -acodec copy "${TEMP_DIR}/${GROUPED_MP3_NAME}")
+if [ $? -ne 0 ]; then
+  echo "The default mp3 merge failed. Using the fallback method..."
+  rm -rf "$TEMP_DIR/$GROUPED_MP3_NAME"
+  find *.mp3 -exec cat "{}" \; >>"$TEMP_DIR/$GROUPED_MP3_NAME"
+fi
 
 cd "${TEMP_DIR}" || exit
 

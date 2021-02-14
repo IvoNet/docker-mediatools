@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+ffprobe -v quiet -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "$1"
+ffprobe -v quiet -show_entries -of default=noprint_wrappers=1:nokey=1 "$1"
+ffprobe -v quiet -show_entries format=duration "$1"
+ffprobe -v quiet -print_format json -show_format "$1"
+
+
+ffprobe -v quiet -print_format json -show_format "The Legion of Flame (Unabridged) - 001.mp3" | jq ".format.duration[text]"
