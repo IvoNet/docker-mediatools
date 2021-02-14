@@ -253,11 +253,11 @@ fi
 
 cd "${SOURCE_DIR}" || exit
 
-echo "Assembling chapter information..."
 if [ -z "${CHAPTER_LENGTH}" ]; then
   if [ $(find *.mp3 2>/dev/null | wc -l) -eq 0 ]; then
     die "No mp3 files found in this folder"
   fi
+  echo "Assembling chapter information..."
   echo "00:00:00.000 Chapter 1"
   i=2
   total_secs=0
