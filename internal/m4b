@@ -87,6 +87,8 @@ m4b [OPTIONS ...]
                   Default value = 128
 -s VALUE          The samplerate you want to use (optional).
                   Default value = 44100
+-T VALUE          Chapter text. Only alpha chars. spaces will become dots.
+                  (default = Chapter)
 -w VALUE          The work directory to use (optional).
                   Default value = ${HOME}
 -y VALUE          Year
@@ -102,7 +104,7 @@ EOF
 )
 
 # Parse command line options.
-while getopts hvzo:a:t:b:s:c:g:w:G:C:y:d: OPT; do
+while getopts hvzo:a:t:b:s:c:g:w:G:C:y:d:T: OPT; do
   case "${OPT}" in
   h)
     echo "${USAGE}"
@@ -150,6 +152,9 @@ while getopts hvzo:a:t:b:s:c:g:w:G:C:y:d: OPT; do
     ;;
   d)
     TRACK=${OPTARG}
+    ;;
+  T)
+    CHAPTER_TEXT=${OPTARG}
     ;;
   \?)
     # getopts issues an error message
@@ -216,6 +221,11 @@ echo "TRACK=${TRACK}"
 if [ -z "${CHAPTER_IDX}" ]; then
   CHAPTER_IDX=1
 fi
+if [ -z "${CHAPTER_TEXT}" ]; then
+  CHAPTER_TEXT="Chapter"
+else
+  CHAPTER_TEXT=${CHAPTER_TEXT// /.}
+fi
 
 case "${TARGET_DIR}" in
 *)
@@ -268,8 +278,8 @@ if [ -z "${CHAPTER_LENGTH}" ]; then
   i=${CHAPTER_IDX}
   total_seconds=0
   total_millis=0
-  echo "00:00:00.000 Chapter $i" >"${TEMP_DIR}/${AUDIOBOOK}.chapters.txt"
-  echo "00:00:00.000 Chapter $i"
+  echo "00:00:00.000 ${CHAPTER_TEXT} $i" >"${TEMP_DIR}/${AUDIOBOOK}.chapters.txt"
+  echo "00:00:00.000 ${CHAPTER_TEXT} $i"
   for mp3 in *.mp3; do
     duration=$(ffprobe -v quiet -print_format json -show_format "${mp3}" | jq ".format.duration" | sed 's/"//g')
     RETVAL=$?
@@ -288,8 +298,8 @@ if [ -z "${CHAPTER_LENGTH}" ]; then
     seconds=$((total_seconds - (hours * 60 * 60) - (minutes * 60)))
 
     ((i++))
-    printf "%02d:%02d:%02d.%03d Chapter %d\n" "${hours}" "${minutes}" "${seconds}" "${millis:0:3}" $i >>"${TEMP_DIR}/${AUDIOBOOK}.chapters.txt"
-    printf "%02d:%02d:%02d.%03d Chapter %d\n" "${hours}" "${minutes}" "${seconds}" "${millis:0:3}" $i
+    printf "%02d:%02d:%02d.%03d ${CHAPTER_TEXT} %d\n" "${hours}" "${minutes}" "${seconds}" "${millis:0:3}" $i >>"${TEMP_DIR}/${AUDIOBOOK}.chapters.txt"
+    printf "%02d:%02d:%02d.%03d ${CHAPTER_TEXT} %d\n" "${hours}" "${minutes}" "${seconds}" "${millis:0:3}" $i
   done
   cp "${TEMP_DIR}/${AUDIOBOOK}.chapters.txt" "${TARGET_DIR}"
 fi
