@@ -234,7 +234,7 @@ case "${TARGET_DIR}" in
 esac
 
 if [ ! -d "${TEMP_DIR}" ]; then
-  mkdir "${TEMP_DIR}"
+  mkdir -p "${TEMP_DIR}"
 fi
 
 echo "AUTHOR=${AUTHOR}"

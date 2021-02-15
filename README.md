@@ -126,3 +126,6 @@ docker run \
 
 
 
+# Reference
+
+- [StackOverflow](https://stackoverflow.com/questions/66190227/time-length-of-mp3-files-for-mp4chaps/66191594?noredirect=1#comment117041737_66191594)
