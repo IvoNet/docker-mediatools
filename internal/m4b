@@ -9,8 +9,8 @@
 # if cover art is already available in the mp3 file(s) it will be
 # extracted and added to the cover art of the audiobook.
 # else:
-# if an cover art image is available in the same folder it will be added
-# to the Audiobook.
+# if an cover art image is available in the same folder it will be
+# added to the Audiobook.
 #
 # By IvoNet.nl
 #######################################################################
@@ -48,8 +48,6 @@ GROUPED_MP3_NAME="temp_MP3WRAP.mp3"
 # Year
 YEAR=""
 
-#######################################################################
-# Application section - DO NOT EDIT
 #######################################################################
 # Die function
 die() {
@@ -95,6 +93,7 @@ m4b [OPTIONS ...]
                   Default value = ""
 -z                Zero indexed chapter (default = 1 indexed)
 Template:
+m4b -G "" -a "" -t ""
 m4b -G "" -a "" -g "" -t ""
 m4b -G "" -a "" -g "" -t "" -c 600
 m4b -w ./tmp -a "" -g "" -G "" -t ""
@@ -174,7 +173,7 @@ if [ -z "${ALBUM}" ]; then
   die "The -t option is mandatory.\n${USAGE}"
 fi
 
-#Convention over configuration
+# Convention over configuration
 if [ -z "${AUDIOBOOK}" ]; then
   if [ -z "${GROUPING}" ]; then
     AUDIOBOOK="${AUTHOR} - ${ALBUM}"
@@ -189,6 +188,7 @@ fi
 
 mp3fl="$(find *.mp3 | head -n 1)"
 
+#TODO replace with ffprobe means one less dependency
 if [ -z "${SAMPLERATE}" ]; then
   SAMPLERATE="$(mp3info -p '%Q' "$mp3fl")"
 fi
@@ -335,7 +335,7 @@ fi
 [ ${RETVAL} -eq 0 ] || die "The mp4chaps command failed with exit code: ${RETVAL}"
 
 echo "Adding cover art to audiobook..."
-mp4art --add "$(find . -name '*.jpg' | head -n 1)" "${AUDIOBOOK}.m4b"
+py
 RETVAL=$?
 [ ${RETVAL} -eq 0 ] || die "The mp4art command failed with exit code: ${RETVAL}"
 
