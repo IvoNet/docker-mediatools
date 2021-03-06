@@ -335,7 +335,7 @@ fi
 [ ${RETVAL} -eq 0 ] || die "The mp4chaps command failed with exit code: ${RETVAL}"
 
 echo "Adding cover art to audiobook..."
-py
+mp4art --add "$(find . -name '*.jpg' | head -n 1)" "${AUDIOBOOK}.m4b"
 RETVAL=$?
 [ ${RETVAL} -eq 0 ] || die "The mp4art command failed with exit code: ${RETVAL}"
 
