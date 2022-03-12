@@ -1,4 +1,17 @@
-FROM ubuntu:18.04
+FROM ubuntu:20.04 as builder
+
+RUN apt-get update \
+    && apt-get -y --no-install-recommends install \
+         wget
+
+WORKDIR /opt
+
+#https://github.com/donmelton/video_transcoding/issues/306
+RUN wget http://archive.ubuntu.com/ubuntu/pool/universe/m/mp4v2/libmp4v2-2_2.0.0~dfsg0-6_amd64.deb \
+ && wget http://archive.ubuntu.com/ubuntu/pool/universe/m/mp4v2/mp4v2-utils_2.0.0~dfsg0-6_amd64.deb
+
+
+FROM ubuntu:20.04
 LABEL maintainer="@ivonet"
 
 ENV DEBIAN_FRONTEND noninteractive
@@ -9,7 +22,6 @@ ENV LANGUAGE en_US.UTF-8
 RUN apt-get update \
     && apt-get -y --no-install-recommends install software-properties-common \
     && add-apt-repository -y ppa:stebbins/handbrake-releases \
-    && add-apt-repository ppa:jonathonf/ffmpeg-4 \
     && apt-get -y --no-install-recommends update \
     && apt-get -y --no-install-recommends install \
         handbrake-cli \
@@ -19,7 +31,6 @@ RUN apt-get update \
         mencoder \
         melt \
         atomicparsley \
-        mp4v2-utils \
         id3v2 \
         eyed3 \
         mp3info \
@@ -44,6 +55,13 @@ RUN apt-get update \
         imagemagick \
     && apt-get upgrade -y \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+COPY --from=builder /opt/*.deb /opt/
+
+RUN dpkg -i /opt/libmp4v2-2_2.0.0~dfsg0-6_amd64.deb \
+ && dpkg -i /opt/mp4v2-utils_2.0.0~dfsg0-6_amd64.deb \
+ && rm -rf /opt/*.deb
+
 
 ENTRYPOINT [""]
 WORKDIR /input

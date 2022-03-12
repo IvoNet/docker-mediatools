@@ -7,15 +7,15 @@
 # Be careful editing anything below this line
 ##############################################################################
 if [ -z "$1" ]; then
-    echo "Please provide an mkv file as parameter and the track to keep"
-    echo "Syntax: $0 <mkv> <tracknr>"
+    echo "Please provide an aiff file as parameter and the track to keep"
+    echo "Syntax: $0 <aiff>"
     exit 1
 fi
 SAVEIFS=$IFS
 IFS=$(echo -en "\n\b")
-mkv="$(basename $1)"
+aiff="$(basename $1)"
 map="$(dirname $1)"
-enc="${mkv%.*}.new.mkv"
+enc="${aiff%.*}.mp3"
 enc="$(basename $enc)"
 sudo docker run \
    --cpuset-cpus="1-2" \
@@ -24,6 +24,6 @@ sudo docker run \
    -v "$(pwd)/$map:/output:rw" \
    --entrypoint "ffmpeg" \
    ivonet/mediatools:latest \
-   -i "/input/$mkv" -map 0 -c:a copy -c:s copy -c:v libx264 "/output/$enc"
+   -i "/input/$aiff" -f mp3 -acodec libmp3lame -ab 320000 -ar 44100 "/output/$enc"
 IFS=$SAVEIFS
 
