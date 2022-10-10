@@ -1,4 +1,4 @@
-FROM ubuntu:20.04 as builder
+FROM ubuntu:22.04 as builder
 
 RUN apt-get update \
     && apt-get -y --no-install-recommends install \
@@ -6,9 +6,13 @@ RUN apt-get update \
 
 WORKDIR /opt
 
-#https://github.com/donmelton/video_transcoding/issues/306
-RUN wget http://archive.ubuntu.com/ubuntu/pool/universe/m/mp4v2/libmp4v2-2_2.0.0~dfsg0-6_amd64.deb \
- && wget http://archive.ubuntu.com/ubuntu/pool/universe/m/mp4v2/mp4v2-utils_2.0.0~dfsg0-6_amd64.deb
+RUN if [ $(arch) == 'aarch64' ]; then  \
+      wget https://www.deb-multimedia.org/pool/main/m/mp4v2-dmo/libmp4v2-2_2.0.0-dmo6_arm64.deb;  \
+      wget https://www.deb-multimedia.org/pool/main/m/mp4v2-dmo/mp4v2-utils_2.0.0-dmo6_arm64.deb;  \
+    else \
+      wget http://archive.ubuntu.com/ubuntu/pool/universe/m/mp4v2/libmp4v2-2_2.0.0~dfsg0-6_amd64.deb;  \
+      wget http://archive.ubuntu.com/ubuntu/pool/universe/m/mp4v2/mp4v2-utils_2.0.0~dfsg0-6_amd64.deb; \
+    fi
 
 
 FROM ubuntu:20.04
@@ -19,7 +23,16 @@ ENV LANG en_US.UTF-8
 ENV LC_ALL C.UTF-8
 ENV LANGUAGE en_US.UTF-8
 
-RUN apt-get update \
+WORKDIR /opt
+
+COPY --from=builder /opt/*.deb /opt/
+
+RUN if [ "`uname -m`" == "aarch64" ]; then dpkg -i /opt/libmp4v2-2_2.0.0-dmo6_arm64.deb; dpkg -i /opt/mp4v2-utils_2.0.0-dmo6_arm64.deb else dpkg -i /opt/libmp4v2-2_2.0.0~dfsg0-6_amd64.deb; dpkg -i /opt/mp4v2-utils_2.0.0~dfsg0-6_amd64.deb fi \
+    && rm -rf /opt/*.deb
+
+
+
+RUN apt-get -y --no-install-recommends update \
     && apt-get -y --no-install-recommends install software-properties-common \
     && add-apt-repository -y ppa:stebbins/handbrake-releases \
     && apt-get -y --no-install-recommends update \
@@ -55,12 +68,6 @@ RUN apt-get update \
         imagemagick \
     && apt-get upgrade -y \
     && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-COPY --from=builder /opt/*.deb /opt/
-
-RUN dpkg -i /opt/libmp4v2-2_2.0.0~dfsg0-6_amd64.deb \
- && dpkg -i /opt/mp4v2-utils_2.0.0~dfsg0-6_amd64.deb \
- && rm -rf /opt/*.deb
 
 
 ENTRYPOINT [""]
